@@ -82,8 +82,6 @@ class UserViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
-# ВЬЮШКИ ДЛЯ КОММЕНТАРИЕВ И ОТЗЫВОВ
-
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
@@ -121,3 +119,4 @@ class CommentViewSet(viewsets.ModelViewSet):
         review_id = self.kwargs.get('review_id')
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
+

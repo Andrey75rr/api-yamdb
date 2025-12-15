@@ -1,13 +1,16 @@
 from django.db import models
 from django.utils.text import Truncator
 
-from reviews.сonstants import STR_LENGTH
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH, STR_LENGTH
 
 
 class Category(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Наименование')
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name='Наименование'
+    )
     slug = models.SlugField(
-        max_length=50,
+        max_length=SLUG_FIELD_LENGTH,
         unique=True,
         verbose_name='Адрес категории'
     )
@@ -21,9 +24,12 @@ class Category(models.Model):
 
 
 class Genre(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название жанра')
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name='Название жанра'
+    )
     slug = models.SlugField(
-        max_length=50,
+        max_length=SLUG_FIELD_LENGTH,
         unique=True,
         verbose_name='Адрес жанра'
     )
@@ -37,7 +43,10 @@ class Genre(models.Model):
 
 
 class Title(models.Model):
-    name = models.CharField(max_length=256, verbose_name='Название')
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name='Название'
+    )
     year = models.IntegerField(verbose_name='Год выпуска')
     rating = models.IntegerField(
         null=True,

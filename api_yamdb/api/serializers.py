@@ -5,12 +5,29 @@ import string
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.core.validators import RegexValidator
+from django.utils.timezone import now
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from reviews.models import Comment, Review
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from reviews.models import Category, Comment, Genre, Review, Title
+
 
 User = get_user_model()
+
+
+class SlugNameSerializer(serializers.ModelSerializier):
+    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
+    slug = serializers.CharField(
+        max_length=SLUG_FIELD_LENGTH,
+        validators=[
+            RegexValidator(
+                regex=r'^[-a-zA-Z0-9_]+$',
+                message='Slug содержит недопустимые символы'
+            )
+        ]
+    )
 
 
 class UsernameValidationMixin:
@@ -108,7 +125,34 @@ class AdminUserSerializer(
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-# СЕРИАЛИЗАТОРЫ ОТЗЫВОВ И КОММЕНТАРИЕВ
+
+class CategorySerializer(SlugNameSerializer):
+    """Сериализатор для категорий."""
+
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+
+class GenreSerializer(SlugNameSerializer):
+    """Сериализатор для жанров."""
+
+    class Meta:
+        model = Genre
+        fields = '__all__'
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -148,15 +192,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор для комментариев."""
-
-    author = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True
-    )
+class TitleSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
+    rating = serializers.IntegerField(read_only=True)
+    year = serializers.IntegerField(max_value=now().year)
 
     class Meta:
-        model = Comment
-        fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('author',)
+        model = Title
+        fields = '__all__'
