@@ -1,4 +1,7 @@
 from django.db import models
+from django.utils.text import Truncator
+
+from reviews.сonstants import STR_LENGTH
 
 
 class Category(models.Model):
@@ -13,6 +16,9 @@ class Category(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
+
 
 class Genre(models.Model):
     name = models.CharField(max_length=256, verbose_name='Название жанра')
@@ -25,6 +31,9 @@ class Genre(models.Model):
     class Meta:
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
 
 
 class Title(models.Model):
@@ -49,3 +58,6 @@ class Title(models.Model):
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
         default_related_name = 'titles'
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)

@@ -1,0 +1,1 @@
+STR_LENGTH = 30
