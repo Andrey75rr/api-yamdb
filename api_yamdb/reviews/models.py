@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class User(AbstractUser):
@@ -52,3 +53,68 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == self.Role.MODERATOR
+
+
+# ОТЗЫВЫ И КОММЕНТАРИИ
+
+class Review(models.Model):
+    """Модель отзыва на произведение."""
+
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+    score = models.IntegerField(
+        validators=[
+            MinValueValidator(1),
+            MaxValueValidator(10)
+        ]
+    )
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # Один пользователь - один отзыв на произведение
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_review'
+            )
+        ]
+        ordering = ['-pub_date']
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+
+    def __str__(self):
+        return f'Отзыв от {self.author} на {self.title}'
+
+
+class Comment(models.Model):
+    """Модель комментария к отзыву."""
+
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'  # Как назвать related_name?
+    )
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'  # Как назвать related_name?
+    )
+    pub_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-pub_date']
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+
+    def __str__(self):
+        return f'Комментарий от {self.author}'
