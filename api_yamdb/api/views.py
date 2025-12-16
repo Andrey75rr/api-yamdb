@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -10,13 +11,15 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Comment, Review, User
+from reviews.models import Category, Comment, Review, User
 
-from .permissions import (
+from api.permissions import (
     IsAdmin,
+    IsAdminOrReadOnly,
     IsAuthorModeratorAdminOrReadOnly
 )
-from .serializers import (
+from api.serializers import (
+    CategorySerializer,
     CommentSerializer,
     ReviewSerializer,
     SignUpSerializer,
@@ -120,3 +123,16 @@ class CommentViewSet(viewsets.ModelViewSet):
         review = get_object_or_404(Review, id=review_id)
         serializer.save(author=self.request.user, review=review)
 
+
+class CategoryViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (SearchFilter,)
+    search_fields = ['name']
+    lookup_field = 'slug'

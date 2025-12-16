@@ -6,25 +6,25 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.core.validators import RegexValidator
-from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
-from reviews.models import Category, Comment, Genre, Review, Title
+from reviews.models import Category, Review, Title
 
 
 User = get_user_model()
 
 
-class SlugNameSerializer(serializers.ModelSerializier):
+class SlugNameSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     slug = serializers.CharField(
         max_length=SLUG_FIELD_LENGTH,
         validators=[
             RegexValidator(
                 regex=r'^[-a-zA-Z0-9_]+$',
-                message='Slug содержит недопустимые символы'
+                message=_('Slug содержит недопустимые символы')
             )
         ]
     )
