@@ -1,20 +1,29 @@
-import random
-import re
-import string
-
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
-from django.core.validators import RegexValidator
-from django.utils.translation import gettext_lazy as _
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-
-from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from reviews.models import Category, Genre, Title
 from reviews.models import Category, Review, Title
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from rest_framework.validators import UniqueValidator
+from rest_framework import serializers
+from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
+from datetime import datetime
+from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
+from django.conf import settings
+import string
+import re
+import random
+<< << << < HEAD
+
+== == == =
+
+>>>>>> > 2495b9b(feat: add Title implementation)
+
+<< << << < HEAD
 
 
 User = get_user_model()
+== == == =
+>>>>>> > 2495b9b(feat: add Title implementation)
 
 
 class SlugNameSerializer(serializers.ModelSerializer):
@@ -190,3 +199,13 @@ class ReviewSerializer(serializers.ModelSerializer):
                     'Вы уже оставляли отзыв на это произведение.'
                 )
         return data
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
+    rating = serializers.IntegerField(read_only=True)
+    year = serializers.IntegerField(max_value=datetime.now().year)
+
+    class Meta:
+        model = Title
+        fields = '__all__'

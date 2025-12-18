@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
@@ -11,7 +12,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Genre, Comment, Review, User
+from reviews.models import Category, Genre, Title, Comment, Review, User
 
 from api.permissions import (
     IsAdmin,
@@ -24,6 +25,7 @@ from api.serializers import (
     CommentSerializer,
     ReviewSerializer,
     SignUpSerializer,
+    TitleSerializer,
     TokenSerializer,
     UserSerializer,
 )
@@ -131,6 +133,7 @@ class CategoryViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
+    """Вьюсет для категорий."""
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
@@ -145,9 +148,22 @@ class GenreViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet
 ):
+    """Вьюсет для жанров."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (SearchFilter,)
     search_fields = ['name']
     lookup_field = 'slug'
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для произведений."""
+
+    queryset = Title.objects.select_related(
+        'category').prefetch_related('genre')
+    serializer_class = TitleSerializer
+#    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_fields = ['category__slug', 'genre__slug', 'name', 'year']
