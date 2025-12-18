@@ -1,32 +1,27 @@
-from reviews.models import Category, Genre, Title
-from reviews.models import Category, Review, Title
-from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
-from rest_framework.validators import UniqueValidator
-from rest_framework import serializers
-from django.utils.translation import gettext_lazy as _
-from django.core.validators import RegexValidator
-from datetime import datetime
-from django.core.mail import send_mail
-from django.contrib.auth import get_user_model
-from django.conf import settings
 import string
 import re
 import random
-<< << << < HEAD
+from datetime import datetime
 
-== == == =
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
 
->>>>>> > 2495b9b(feat: add Title implementation)
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
-<< << << < HEAD
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from reviews.models import Category, Genre, Title, Review, Title
 
 
 User = get_user_model()
-== == == =
->>>>>> > 2495b9b(feat: add Title implementation)
 
 
 class SlugNameSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для моделей с полем slug."""
+
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     slug = serializers.CharField(
         max_length=SLUG_FIELD_LENGTH,
@@ -202,6 +197,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для произведений."""
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     rating = serializers.IntegerField(read_only=True)
     year = serializers.IntegerField(max_value=datetime.now().year)

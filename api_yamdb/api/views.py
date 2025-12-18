@@ -12,8 +12,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Genre, Title, Comment, Review, User
-
 from api.permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
@@ -29,6 +27,7 @@ from api.serializers import (
     TokenSerializer,
     UserSerializer,
 )
+from reviews.models import Category, Genre, Title, Comment, Review, User
 
 
 class SignUpView(APIView):
