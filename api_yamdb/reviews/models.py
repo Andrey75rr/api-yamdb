@@ -147,6 +147,20 @@ class Review(models.Model):
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_title_rating()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.update_title_rating()
+
+    def update_title_rating(self):
+        avg_rating = self.title.reviews.aggregate(
+            models.Avg('score'))['score__avg']
+        self.title.rating = round(avg_rating) if avg_rating else None
+        self.title.save()
+
     class Meta:
         default_related_name = 'author_reviews'
         constraints = [
