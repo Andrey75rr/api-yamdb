@@ -190,13 +190,3 @@ class ReviewSerializer(serializers.ModelSerializer):
                     'Вы уже оставляли отзыв на это произведение.'
                 )
         return data
-
-
-class TitleSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
-    rating = serializers.IntegerField(read_only=True)
-    year = serializers.IntegerField(max_value=now().year)
-
-    class Meta:
-        model = Title
-        fields = '__all__'

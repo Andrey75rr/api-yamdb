@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from reviews.models import Category, Comment, Review, User
+from reviews.models import Category, Genre, Comment, Review, User
 
 from api.permissions import (
     IsAdmin,
@@ -20,6 +20,7 @@ from api.permissions import (
 )
 from api.serializers import (
     CategorySerializer,
+    GenreSerializer,
     CommentSerializer,
     ReviewSerializer,
     SignUpSerializer,
@@ -132,6 +133,20 @@ class CategoryViewSet(
 ):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (IsAdminOrReadOnly,)
+    filter_backends = (SearchFilter,)
+    search_fields = ['name']
+    lookup_field = 'slug'
+
+
+class GenreViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (SearchFilter,)
     search_fields = ['name']

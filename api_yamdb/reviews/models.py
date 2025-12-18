@@ -22,3 +22,22 @@ class Category(models.Model):
 
     def __str__(self):
         return Truncator(self.name).chars(STR_LENGTH)
+
+
+class Genre(models.Model):
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name=_('Название жанра')
+    )
+    slug = models.SlugField(
+        max_length=SLUG_FIELD_LENGTH,
+        unique=True,
+        verbose_name=_('Адрес жанра')
+    )
+
+    class Meta:
+        verbose_name = _('Жанр')
+        verbose_name_plural = _('Жанры')
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
