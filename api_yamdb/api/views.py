@@ -12,7 +12,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from reviews.models import Comment, Review, User
 
-from .permissions import IsAdmin, IsAuthorOrReadOnly
+from .permissions import (
+    IsAdmin,
+    IsAuthorModeratorAdminOrReadOnly
+)
 from .serializers import (
     CommentSerializer,
     ReviewSerializer,
@@ -42,16 +45,14 @@ class TokenView(APIView):
     def post(self, request):
         serializer = TokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = get_object_or_404(
             User, username=serializer.validated_data['username']
         )
-
         refresh = RefreshToken.for_user(user)
-
         return Response({
             'token': str(refresh.access_token),
         })
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
@@ -60,7 +61,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
-    lookup_value_regex = '[a-zA-Z0-9]+'
+    lookup_value_regex = r'^[\w.@+-]+\Z'
 
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
@@ -70,12 +71,12 @@ class UserViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
-
         if request.method == 'PATCH':
-            serializer = self.get_serializer(
+            serializer = UserSerializer(
                 request.user,
                 data=request.data,
-                partial=True
+                partial=True,
+                context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -88,7 +89,10 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
 
     serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        IsAuthorModeratorAdminOrReadOnly
+    ]
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -103,7 +107,10 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для комментариев."""
 
     serializer_class = CommentSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+        IsAuthorModeratorAdminOrReadOnly
+    ]
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')

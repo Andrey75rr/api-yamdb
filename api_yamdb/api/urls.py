@@ -9,39 +9,26 @@ from .views import (
     UserViewSet,
 )
 
-router = DefaultRouter()
-router.register('users', UserViewSet, basename='users')
+main_router = DefaultRouter()
+main_router.register('users', UserViewSet, basename='users')
+reviews_router = DefaultRouter()
+reviews_router.register(
+    r'titles/(?P<title_id>\d+)/reviews',
+    ReviewViewSet,
+    basename='title-reviews'
+)
+
+comments_router = DefaultRouter()
+comments_router.register(
+    r'titles/(?P<title_id>\d+)/reviews/(?P<review_id>\d+)/comments',
+    CommentViewSet,
+    basename='review-comments'
+)
 
 urlpatterns = [
-    path('auth/signup/', SignUpView.as_view()),
-    path('auth/token/', TokenView.as_view()),
-    path('', include(router.urls)),
-    path(
-        'titles/<int:title_id>/reviews/',
-        ReviewViewSet.as_view({'get': 'list', 'post': 'create'}),
-        name='review-list'
-    ),
-    path(
-        'titles/<int:title_id>/reviews/<int:pk>/',
-        ReviewViewSet.as_view({
-            'get': 'retrieve',
-            'patch': 'partial_update',
-            'delete': 'destroy'
-        }),
-        name='review-detail'
-    ),
-    path(
-        'titles/<int:title_id>/reviews/<int:review_id>/comments/',
-        CommentViewSet.as_view({'get': 'list', 'post': 'create'}),
-        name='comment-list'
-    ),
-    path(
-        'titles/<int:title_id>/reviews/<int:review_id>/comments/<int:pk>/',
-        CommentViewSet.as_view({
-            'get': 'retrieve',
-            'patch': 'partial_update',
-            'delete': 'destroy'
-        }),
-        name='comment-detail'
-    ),
+    path('v1/auth/signup/', SignUpView.as_view()),
+    path('v1/auth/token/', TokenView.as_view()),
+    path('v1/', include(main_router.urls)),
+    path('v1/', include(reviews_router.urls)),
+    path('v1/', include(comments_router.urls)),
 ]

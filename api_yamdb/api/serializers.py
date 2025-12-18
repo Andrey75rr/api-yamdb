@@ -1,4 +1,5 @@
 import random
+import re
 import string
 
 from django.conf import settings
@@ -12,26 +13,43 @@ from reviews.models import Comment, Review
 User = get_user_model()
 
 
-class SignUpSerializer(serializers.Serializer):
+class UsernameValidationMixin:
+    """Миксин для валидации username."""
+
+    def validate_username(self, value):
+        if value.lower() == 'me':
+            raise serializers.ValidationError(
+                'Имя пользователя "me" не разрешено.'
+            )
+        pattern = r'^[\w.@+-]+\Z'
+        if not re.match(pattern, value):
+            raise serializers.ValidationError(
+                'Имя пользователя содержит недопустимые символы. '
+                'Разрешены только буквы, цифры и символы @/./+/-/_.'
+            )
+        return value
+
+
+class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
     """Сериализатор для регистрации пользователя."""
+
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
     )
-
     username = serializers.CharField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        max_length=150,
+        validators=[
+            UniqueValidator(queryset=User.objects.all()),
+        ]
     )
 
     def validate(self, data):
-        if data['username'].lower() == 'me':
-            raise serializers.ValidationError(
-                'Имя пользователя "me" не разрешено.'
-            )
         return data
 
     def create(self, validated_data):
+
         confirmation_code = ''.join(
             random.choice(string.ascii_uppercase + string.digits)
             for _ in range(6)
@@ -50,15 +68,14 @@ class SignUpSerializer(serializers.Serializer):
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[validated_data['email']],
         )
-
         return user
 
 
-class TokenSerializer(serializers.Serializer):
+class TokenSerializer(UsernameValidationMixin, serializers.Serializer):
     """Сериализатор для получения JWT-токена."""
 
     username = serializers.CharField(required=True)
-    confirmation_code = serializers.CharField(required=True)
+    confirmation_code = serializers.CharField(required=True, write_only=True)
 
     def validate(self, data):
         try:
@@ -67,11 +84,10 @@ class TokenSerializer(serializers.Serializer):
             raise serializers.ValidationError('Пользователь не найден.')
         if user.confirmation_code != data['confirmation_code']:
             raise serializers.ValidationError('Неверный код подтверждения.')
-
         return data
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(UsernameValidationMixin, serializers.ModelSerializer):
     """Сериализатор для работы с пользователями."""
 
     class Meta:
@@ -79,6 +95,18 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
         read_only_fields = ('role',)
+
+
+class AdminUserSerializer(
+    UsernameValidationMixin,
+    serializers.ModelSerializer
+):
+    """Сериализатор для администраторов (полные права)."""
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name',
+                  'last_name', 'bio', 'role')
 
 # СЕРИАЛИЗАТОРЫ ОТЗЫВОВ И КОММЕНТАРИЕВ
 
@@ -89,6 +117,16 @@ class ReviewSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
+    )
+
+    score = serializers.IntegerField(
+        min_value=1,
+        max_value=10,
+        required=True,
+        error_messages={
+            'min_value': 'Оценка не может быть меньше 1',
+            'max_value': 'Оценка не может быть больше 10'
+        }
     )
 
     class Meta:
