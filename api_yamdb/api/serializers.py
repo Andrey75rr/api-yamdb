@@ -13,7 +13,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
-from reviews.models import Category, Genre, Title, Review, Title
+from reviews.models import Category, Comment, Genre, Title, Review, Title
 
 
 User = get_user_model()
