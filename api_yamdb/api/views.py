@@ -93,6 +93,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
 
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     serializer_class = ReviewSerializer
     permission_classes = [
         IsAuthenticatedOrReadOnly,
@@ -105,12 +106,16 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         title_id = self.kwargs.get('title_id')
-        serializer.save(author=self.request.user, title_id=title_id)
+        serializer.save(
+            author=self.request.user,
+            title=get_object_or_404(Title, pk=title_id)
+        )
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для комментариев."""
-
+    
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     serializer_class = CommentSerializer
     permission_classes = [
         IsAuthenticatedOrReadOnly,
@@ -172,5 +177,3 @@ class TitleViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update']:
             return TitleSerializer
         return TitleReadSerializer
-    
-
