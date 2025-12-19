@@ -10,6 +10,7 @@ from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 
 from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
@@ -56,21 +57,47 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
 
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=User.objects.all())]
+        max_length=254,
     )
     username = serializers.CharField(
         required=True,
         max_length=150,
-        validators=[
-            UniqueValidator(queryset=User.objects.all()),
-        ]
     )
 
     def validate(self, data):
+        email = data.get('email')
+        username = data.get('username')
+
+        if not email or not username:
+            return data
+
+        email_exists = User.objects.filter(email=email).exists()
+        username_exists = User.objects.filter(username=username).exists()
+
+        if email_exists and username_exists:
+            user = User.objects.filter(
+                email=email,
+                username=username
+            ).first()
+            if not user:
+                raise serializers.ValidationError(
+                    'Email и username принадлежат разным пользователям.'
+                )
+        elif email_exists:
+            user_with_email = User.objects.filter(email=email).first()
+            if user_with_email.username != username:
+                raise serializers.ValidationError(
+                    'Пользователь с таким email уже существует.'
+                )
+        elif username_exists:
+            user_with_username = User.objects.filter(username=username).first()
+            if user_with_username.email != email:
+                raise serializers.ValidationError(
+                    'Пользователь с таким username уже существует.'
+                )
         return data
 
     def create(self, validated_data):
-
         confirmation_code = ''.join(
             random.choice(string.ascii_uppercase + string.digits)
             for _ in range(6)
@@ -99,12 +126,16 @@ class TokenSerializer(UsernameValidationMixin, serializers.Serializer):
     confirmation_code = serializers.CharField(required=True, write_only=True)
 
     def validate(self, data):
+        username = data['username']
+        confirmation_code = data['confirmation_code']
         try:
-            user = User.objects.get(username=data['username'])
+            user = User.objects.get(username=username)
         except User.DoesNotExist:
-            raise serializers.ValidationError('Пользователь не найден.')
-        if user.confirmation_code != data['confirmation_code']:
-            raise serializers.ValidationError('Неверный код подтверждения.')
+            raise NotFound('Пользователь не найден.')
+        if user.confirmation_code != confirmation_code:
+            raise serializers.ValidationError(
+                {'confirmation_code': 'Неверный код подтверждения.'}
+            )
         return data
 
 
@@ -224,7 +255,7 @@ class TitleSerializer(serializers.ModelSerializer):
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
-        many=True, 
+        many=True,
         required=True
     )
     category = serializers.SlugRelatedField(
@@ -240,11 +271,11 @@ class TitleSerializer(serializers.ModelSerializer):
 
 class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения Title."""
-    
+
     rating = serializers.IntegerField(read_only=True, allow_null=True)
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
-    
+
     class Meta:
         model = Title
         fields = (
