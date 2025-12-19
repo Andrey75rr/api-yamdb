@@ -24,6 +24,7 @@ from api.serializers import (
     ReviewSerializer,
     SignUpSerializer,
     TitleSerializer,
+    TitleReadSerializer,
     TokenSerializer,
     UserSerializer,
 )
@@ -162,7 +163,11 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.select_related(
         'category').prefetch_related('genre')
-    serializer_class = TitleSerializer
-#    permission_classes = (IsAdminOrReadOnly,)
+    permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ['category__slug', 'genre__slug', 'name', 'year']
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TitleSerializer
+        return TitleReadSerializer

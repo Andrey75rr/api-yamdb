@@ -29,7 +29,7 @@ class SlugNameSerializer(serializers.ModelSerializer):
             RegexValidator(
                 regex=r'^[-a-zA-Z0-9_]+$',
                 message=_('Slug содержит недопустимые символы')
-            )
+            ),
         ]
     )
 
@@ -133,17 +133,37 @@ class AdminUserSerializer(
 class CategorySerializer(SlugNameSerializer):
     """Сериализатор для категорий."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['slug'].validators.append(
+            UniqueValidator(
+                queryset=Category.objects.all(),
+                message=_('Категория с таким slug уже существует.')
+            )
+        )
+
     class Meta:
         model = Category
-        fields = '__all__'
+        fields = ('name', 'slug')
 
 
 class GenreSerializer(SlugNameSerializer):
     """Сериализатор для жанров."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['slug'].validators.append(
+            UniqueValidator(
+                queryset=Genre.objects.all(),
+                message=_('Жанр с таким slug уже существует.')
+            )
+        )
+
     class Meta:
         model = Genre
-        fields = '__all__'
+        fields = ('name', 'slug')
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -201,7 +221,31 @@ class TitleSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     rating = serializers.IntegerField(read_only=True)
     year = serializers.IntegerField(max_value=datetime.now().year)
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True, 
+        required=True
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        required=True
+    )
 
     class Meta:
         model = Title
         fields = '__all__'
+
+
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения Title."""
+    
+    rating = serializers.IntegerField(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
+    
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')

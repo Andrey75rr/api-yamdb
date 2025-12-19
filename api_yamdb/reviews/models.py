@@ -19,6 +19,7 @@ class Category(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = _('Категория')
         verbose_name_plural = _('Категории')
 
@@ -38,6 +39,7 @@ class Genre(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = _('Жанр')
         verbose_name_plural = _('Жанры')
 
@@ -67,6 +69,7 @@ class Title(models.Model):
     )
 
     class Meta:
+        ordering = ['name']
         verbose_name = _('Произведение')
         verbose_name_plural = _('Произведения')
         default_related_name = 'titles'
@@ -137,7 +140,7 @@ class Review(models.Model):
     author = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
-        related_name='reviews'
+       # related_name='reviews'
     )
     score = models.IntegerField(
         validators=[
@@ -162,7 +165,7 @@ class Review(models.Model):
         self.title.save()
 
     class Meta:
-        default_related_name = 'author_reviews'
+        default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -187,13 +190,12 @@ class Comment(models.Model):
     text = models.TextField()
     author = models.ForeignKey(
         'User',
-        on_delete=models.CASCADE,
-        related_name='author_comments'
+        on_delete=models.CASCADE,        
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        default_related_name = 'review_comments'
+        default_related_name = 'comments'
         ordering = ['-pub_date']
         verbose_name = _('Комментарий')
         verbose_name_plural = _('Комментарии')
