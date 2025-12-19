@@ -17,6 +17,7 @@ from api.permissions import (
     IsAdminOrReadOnly,
     IsAuthorModeratorAdminOrReadOnly
 )
+from api.filters import TitleFilterBackend
 from api.serializers import (
     CategorySerializer,
     GenreSerializer,
@@ -163,11 +164,13 @@ class TitleViewSet(viewsets.ModelViewSet):
 
     queryset = Title.objects.select_related(
         'category').prefetch_related('genre')
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (DjangoFilterBackend,)
-    filterset_fields = ['category__slug', 'genre__slug', 'name', 'year']
+    filter_backends = (TitleFilterBackend,)
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
             return TitleSerializer
         return TitleReadSerializer
+    
+

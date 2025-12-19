@@ -241,7 +241,7 @@ class TitleSerializer(serializers.ModelSerializer):
 class TitleReadSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения Title."""
     
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
     
