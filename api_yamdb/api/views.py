@@ -1,8 +1,7 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, status, viewsets
+from rest_framework import mixins, status, viewsets, filters
 from rest_framework.decorators import action
-from rest_framework.filters import SearchFilter
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
@@ -19,9 +18,10 @@ from api.permissions import (
 )
 from api.filters import TitleFilterBackend
 from api.serializers import (
+    AdminUserSerializer,
     CategorySerializer,
-    GenreSerializer,
     CommentSerializer,
+    GenreSerializer,
     ReviewSerializer,
     SignUpSerializer,
     TitleSerializer,
@@ -64,11 +64,20 @@ class TokenView(APIView):
 class UserViewSet(viewsets.ModelViewSet):
     """Вьюсет для управления пользователями."""
 
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
-    lookup_value_regex = r'^[\w.@+-]+\Z'
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ['username', 'email']
+
+    def get_serializer_class(self):
+        """Выбираем сериализатор в зависимости от прав пользователя."""
+        if self.request.user.is_authenticated and self.request.user.is_admin:
+            return AdminUserSerializer
+        return UserSerializer
 
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
@@ -143,7 +152,7 @@ class CategoryViewSet(
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (SearchFilter,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ['name']
     lookup_field = 'slug'
 
@@ -159,7 +168,7 @@ class GenreViewSet(
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (SearchFilter,)
+    filter_backends = (filters.SearchFilter,)
     search_fields = ['name']
     lookup_field = 'slug'
 
