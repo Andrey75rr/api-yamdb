@@ -1,16 +1,37 @@
-import random
-import re
 import string
+import re
+import random
+from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.core.validators import RegexValidator
+from django.utils.translation import gettext_lazy as _
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from reviews.models import Comment, Review
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from reviews.models import Category, Comment, Genre, Title, Review, Title
+
 
 User = get_user_model()
+
+
+class SlugNameSerializer(serializers.ModelSerializer):
+    """Базовый сериализатор для моделей с полем slug."""
+
+    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
+    slug = serializers.CharField(
+        max_length=SLUG_FIELD_LENGTH,
+        validators=[
+            RegexValidator(
+                regex=r'^[-a-zA-Z0-9_]+$',
+                message=_('Slug содержит недопустимые символы')
+            ),
+        ]
+    )
 
 
 class UsernameValidationMixin:
@@ -108,7 +129,54 @@ class AdminUserSerializer(
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
 
-# СЕРИАЛИЗАТОРЫ ОТЗЫВОВ И КОММЕНТАРИЕВ
+
+class CategorySerializer(SlugNameSerializer):
+    """Сериализатор для категорий."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['slug'].validators.append(
+            UniqueValidator(
+                queryset=Category.objects.all(),
+                message=_('Категория с таким slug уже существует.')
+            )
+        )
+
+    class Meta:
+        model = Category
+        fields = ('name', 'slug')
+
+
+class GenreSerializer(SlugNameSerializer):
+    """Сериализатор для жанров."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['slug'].validators.append(
+            UniqueValidator(
+                queryset=Genre.objects.all(),
+                message=_('Жанр с таким slug уже существует.')
+            )
+        )
+
+    class Meta:
+        model = Genre
+        fields = ('name', 'slug')
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    class Meta:
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date')
 
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -148,15 +216,36 @@ class ReviewSerializer(serializers.ModelSerializer):
         return data
 
 
-class CommentSerializer(serializers.ModelSerializer):
-    """Сериализатор для комментариев."""
-
-    author = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True
+class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для произведений."""
+    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
+    rating = serializers.IntegerField(read_only=True)
+    year = serializers.IntegerField(max_value=datetime.now().year)
+    genre = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Genre.objects.all(),
+        many=True, 
+        required=True
+    )
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all(),
+        required=True
     )
 
     class Meta:
-        model = Comment
-        fields = ('id', 'text', 'author', 'pub_date')
-        read_only_fields = ('author',)
+        model = Title
+        fields = '__all__'
+
+
+class TitleReadSerializer(serializers.ModelSerializer):
+    """Сериализатор для чтения Title."""
+    
+    rating = serializers.IntegerField(read_only=True, allow_null=True)
+    genre = GenreSerializer(many=True, read_only=True)
+    category = CategorySerializer(read_only=True)
+    
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category')

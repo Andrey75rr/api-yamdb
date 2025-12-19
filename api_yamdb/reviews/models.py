@@ -1,7 +1,81 @@
 from django.contrib.auth.models import AbstractUser
-from django.db import models
-from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db import models
+from django.utils.text import Truncator
+from django.utils.translation import gettext_lazy as _
+
+from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH, STR_LENGTH
+
+
+class Category(models.Model):
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name=_('Наименование')
+    )
+    slug = models.SlugField(
+        max_length=SLUG_FIELD_LENGTH,
+        unique=True,
+        verbose_name=_('Адрес категории')
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = _('Категория')
+        verbose_name_plural = _('Категории')
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
+
+
+class Genre(models.Model):
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name=_('Название жанра')
+    )
+    slug = models.SlugField(
+        max_length=SLUG_FIELD_LENGTH,
+        unique=True,
+        verbose_name=_('Адрес жанра')
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = _('Жанр')
+        verbose_name_plural = _('Жанры')
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
+
+
+class Title(models.Model):
+    name = models.CharField(
+        max_length=NAME_FIELD_LENGTH,
+        verbose_name=_('Название')
+    )
+    year = models.IntegerField(verbose_name=_('Год выпуска'))
+    rating = models.IntegerField(
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name=_('Рейтинг на основе отзывов')
+    )
+    description = models.TextField(blank=True, verbose_name=_('Описание'))
+    genre = models.ManyToManyField('Genre', verbose_name=_('Жанр'))
+    category = models.ForeignKey(
+        'Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name=_('Категория')
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = _('Произведение')
+        verbose_name_plural = _('Произведения')
+        default_related_name = 'titles'
+
+    def __str__(self):
+        return Truncator(self.name).chars(STR_LENGTH)
 
 
 class User(AbstractUser):
@@ -55,8 +129,6 @@ class User(AbstractUser):
         return self.role == self.Role.MODERATOR
 
 
-# ОТЗЫВЫ И КОММЕНТАРИИ
-
 class Review(models.Model):
     """Модель отзыва на произведение."""
 
@@ -66,9 +138,9 @@ class Review(models.Model):
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        'User',
         on_delete=models.CASCADE,
-        related_name='reviews'
+        # related_name='reviews'
     )
     score = models.IntegerField(
         validators=[
@@ -78,8 +150,22 @@ class Review(models.Model):
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.update_title_rating()
+
+    def delete(self, *args, **kwargs):
+        super().delete(*args, **kwargs)
+        self.update_title_rating()
+
+    def update_title_rating(self):
+        avg_rating = self.title.reviews.aggregate(
+            models.Avg('score'))['score__avg']
+        self.title.rating = round(avg_rating) if avg_rating else None
+        self.title.save()
+
     class Meta:
-        default_related_name = 'author_reviews'
+        default_related_name = 'reviews'
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
@@ -87,8 +173,8 @@ class Review(models.Model):
             )
         ]
         ordering = ['-pub_date']
-        verbose_name = 'Отзыв'
-        verbose_name_plural = 'Отзывы'
+        verbose_name = _('Отзыв')
+        verbose_name_plural = _('Отзывы')
 
     def __str__(self):
         return f'Отзыв от {self.author} на {self.title}'
@@ -103,17 +189,16 @@ class Comment(models.Model):
     )
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        'User',
         on_delete=models.CASCADE,
-        related_name='author_comments'
     )
     pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        default_related_name = 'review_comments'
+        default_related_name = 'comments'
         ordering = ['-pub_date']
-        verbose_name = 'Комментарий'
-        verbose_name_plural = 'Комментарии'
+        verbose_name = _('Комментарий')
+        verbose_name_plural = _('Комментарии')
 
     def __str__(self):
         return f'Комментарий от {self.author}'
