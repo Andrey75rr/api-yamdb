@@ -1,55 +1,25 @@
-import string
-import re
 import random
+import string
 from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 
-from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
-from reviews.models import Category, Comment, Genre, Title, Review, Title
+from core.constants import (
+    MAX_SCORE_RATING,
+    MIN_SCORE_RATING,
+    NAME_FIELD_LENGTH,
+)
+from core.serializers import SlugNameSerializer, UsernameValidationMixin
+from reviews.models import Category, Comment, Genre, Review, Title
 
 
 User = get_user_model()
-
-
-class SlugNameSerializer(serializers.ModelSerializer):
-    """Базовый сериализатор для моделей с полем slug."""
-
-    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
-    slug = serializers.CharField(
-        max_length=SLUG_FIELD_LENGTH,
-        validators=[
-            RegexValidator(
-                regex=r'^[-a-zA-Z0-9_]+$',
-                message=_('Slug содержит недопустимые символы')
-            ),
-        ]
-    )
-
-
-class UsernameValidationMixin:
-    """Миксин для валидации username."""
-
-    def validate_username(self, value):
-        if value.lower() == 'me':
-            raise serializers.ValidationError(
-                'Имя пользователя "me" не разрешено.'
-            )
-        pattern = r'^[\w.@+-]+\Z'
-        if not re.match(pattern, value):
-            raise serializers.ValidationError(
-                'Имя пользователя содержит недопустимые символы. '
-                'Разрешены только буквы, цифры и символы @/./+/-/_.'
-            )
-        return value
 
 
 class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
@@ -174,9 +144,8 @@ class CategorySerializer(SlugNameSerializer):
             )
         )
 
-    class Meta:
+    class Meta(SlugNameSerializer.Meta):
         model = Category
-        fields = ('name', 'slug')
 
 
 class GenreSerializer(SlugNameSerializer):
@@ -192,9 +161,8 @@ class GenreSerializer(SlugNameSerializer):
             )
         )
 
-    class Meta:
+    class Meta(SlugNameSerializer.Meta):
         model = Genre
-        fields = ('name', 'slug')
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -219,12 +187,12 @@ class ReviewSerializer(serializers.ModelSerializer):
     )
 
     score = serializers.IntegerField(
-        min_value=1,
-        max_value=10,
+        min_value=MIN_SCORE_RATING,
+        max_value=MAX_SCORE_RATING,
         required=True,
         error_messages={
-            'min_value': 'Оценка не может быть меньше 1',
-            'max_value': 'Оценка не может быть больше 10'
+            'min_value': f'Оценка не может быть меньше {MIN_SCORE_RATING}',
+            'max_value': f'Оценка не может быть больше {MAX_SCORE_RATING}'
         }
     )
 
@@ -248,7 +216,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+    """Сериализатор для записи произведений."""
+
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     rating = serializers.IntegerField(read_only=True)
     year = serializers.IntegerField(max_value=datetime.now().year)
@@ -270,7 +239,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    """Сериализатор для чтения Title."""
+    """Сериализатор для чтения произведений."""
 
     rating = serializers.IntegerField(read_only=True, allow_null=True)
     genre = GenreSerializer(many=True, read_only=True)

@@ -1,10 +1,16 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
-from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH, STR_LENGTH
+from core.constants import (
+    MAX_SCORE_RATING,
+    MIN_SCORE_RATING,
+    NAME_FIELD_LENGTH,
+    SLUG_FIELD_LENGTH,
+    STR_LENGTH,
+)
 
 
 class Category(models.Model):
@@ -140,12 +146,11 @@ class Review(models.Model):
     author = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
-        # related_name='reviews'
     )
     score = models.IntegerField(
         validators=[
-            MinValueValidator(1),
-            MaxValueValidator(10)
+            MinValueValidator(MIN_SCORE_RATING),
+            MaxValueValidator(MAX_SCORE_RATING)
         ]
     )
     pub_date = models.DateTimeField(auto_now_add=True)
