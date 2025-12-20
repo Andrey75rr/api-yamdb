@@ -18,4 +18,3 @@ class TitleFilterBackend(BaseFilterBackend):
         if year:
             queryset = queryset.filter(year=int(year))
         return queryset
-    
