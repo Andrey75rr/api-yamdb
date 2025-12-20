@@ -248,7 +248,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class TitleSerializer(serializers.ModelSerializer):
-    """Сериализатор для произведений."""
+    """Сериализатор для записи произведений."""
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
     rating = serializers.IntegerField(read_only=True)
     year = serializers.IntegerField(max_value=datetime.now().year)
@@ -270,7 +270,7 @@ class TitleSerializer(serializers.ModelSerializer):
 
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    """Сериализатор для чтения Title."""
+    """Сериализатор для чтения произведений."""
 
     rating = serializers.IntegerField(read_only=True, allow_null=True)
     genre = GenreSerializer(many=True, read_only=True)

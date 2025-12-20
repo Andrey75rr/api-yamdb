@@ -29,7 +29,8 @@ from api.serializers import (
     TokenSerializer,
     UserSerializer,
 )
-from reviews.models import Category, Genre, Title, Comment, Review, User
+from core.views import SafeUpdateViewSet, SlugModelViewSet
+from reviews.models import Category, Genre, Title, Review, User
 
 
 class SignUpView(APIView):
@@ -99,10 +100,9 @@ class UserViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
 
 
-class ReviewViewSet(viewsets.ModelViewSet):
+class ReviewViewSet(SafeUpdateViewSet):
     """Вьюсет для отзывов."""
 
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     serializer_class = ReviewSerializer
     permission_classes = [
         IsAuthenticatedOrReadOnly,
@@ -121,10 +121,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
         )
 
 
-class CommentViewSet(viewsets.ModelViewSet):
+class CommentViewSet(SafeUpdateViewSet):
     """Вьюсет для комментариев."""
-    
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
     serializer_class = CommentSerializer
     permission_classes = [
         IsAuthenticatedOrReadOnly,
@@ -142,47 +141,31 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, review=review)
 
 
-class CategoryViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class CategoryViewSet(SlugModelViewSet):
     """Вьюсет для категорий."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ['name']
-    lookup_field = 'slug'
 
 
-class GenreViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class GenreViewSet(SlugModelViewSet):
     """Вьюсет для жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (IsAdminOrReadOnly,)
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ['name']
-    lookup_field = 'slug'
+    
 
-
-class TitleViewSet(viewsets.ModelViewSet):
+class TitleViewSet(SafeUpdateViewSet):
     """Вьюсет для произведений."""
 
     queryset = Title.objects.select_related(
         'category').prefetch_related('genre')
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
 
     def get_serializer_class(self):
+        """Вернет соответствующий сериализатор (для записи или чтения)."""
         if self.action in ['create', 'update', 'partial_update']:
             return TitleSerializer
         return TitleReadSerializer
