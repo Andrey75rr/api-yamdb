@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
-from reviews.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH, STR_LENGTH
+from core.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH, STR_LENGTH
 
 
 class Category(models.Model):
