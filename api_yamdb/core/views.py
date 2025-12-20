@@ -29,6 +29,7 @@ class SlugModelViewSet(
     viewsets.GenericViewSet
 ):
     """Базовый вью для моделей-справочников с полем `slug`."""
+    
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ['name']

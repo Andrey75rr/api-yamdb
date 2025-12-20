@@ -153,7 +153,7 @@ class GenreViewSet(SlugModelViewSet):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    
+
 
 class TitleViewSet(SafeUpdateViewSet):
     """Вьюсет для произведений."""
