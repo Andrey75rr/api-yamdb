@@ -1,24 +1,22 @@
-import string
-
 import random
+import string
 from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
-
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 
 from core.constants import (
-    MIN_SCORE_RATING,
     MAX_SCORE_RATING,
-    NAME_FIELD_LENGTH
+    MIN_SCORE_RATING,
+    NAME_FIELD_LENGTH,
 )
 from core.serializers import SlugNameSerializer, UsernameValidationMixin
-from reviews.models import Category, Comment, Genre, Title, Review, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 
 
 User = get_user_model()

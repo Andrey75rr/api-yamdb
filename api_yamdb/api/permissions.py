@@ -22,15 +22,6 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         )
 
 
-class IsAuthorOrReadOnly(permissions.BasePermission):
-    """Разрешение: чтение для всех, изменение только для автора."""
-
-    def has_object_permission(self, request, view, obj):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-        return obj.author == request.user
-
-
 class IsAuthorModeratorAdminOrReadOnly(permissions.BasePermission):
     """
     Разрешение: чтение для всех,

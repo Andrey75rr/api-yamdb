@@ -3,9 +3,10 @@ import os
 
 from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db import IntegrityError, DataError
+from django.db import DataError, IntegrityError
 
 from reviews.models import Category, Comment, Genre, Review, Title, User
+
 
 MODELS_FILES = {
     Category: {
@@ -112,8 +113,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         base_path = os.path.join(settings.BASE_DIR, 'static/data')
-        
+
         for model, config in MODELS_FILES.items():
             self._import_model(model, config, base_path)
-        
+
         self._import_m2m(base_path)

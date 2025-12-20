@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, status, viewsets, filters
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
     AllowAny,
@@ -11,12 +11,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from api.filters import TitleFilterBackend
 from api.permissions import (
     IsAdmin,
     IsAdminOrReadOnly,
-    IsAuthorModeratorAdminOrReadOnly
+    IsAuthorModeratorAdminOrReadOnly,
 )
-from api.filters import TitleFilterBackend
 from api.serializers import (
     AdminUserSerializer,
     CategorySerializer,
@@ -24,13 +24,13 @@ from api.serializers import (
     GenreSerializer,
     ReviewSerializer,
     SignUpSerializer,
-    TitleSerializer,
     TitleReadSerializer,
+    TitleSerializer,
     TokenSerializer,
     UserSerializer,
 )
 from core.views import SafeUpdateViewSet, SlugModelViewSet
-from reviews.models import Category, Genre, Title, Review, User
+from reviews.models import Category, Genre, Review, Title, User
 
 
 class SignUpView(APIView):

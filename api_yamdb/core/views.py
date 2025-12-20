@@ -1,4 +1,4 @@
-from rest_framework import mixins, filters, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.response import Response
 
 from api.permissions import IsAdminOrReadOnly
@@ -20,7 +20,7 @@ class SafeUpdateViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_405_METHOD_NOT_ALLOWED
             )
         return super().update(request, *args, **kwargs)
-    
+
 
 class SlugModelViewSet(
     mixins.ListModelMixin,
@@ -29,7 +29,7 @@ class SlugModelViewSet(
     viewsets.GenericViewSet
 ):
     """Базовый вью для моделей-справочников с полем `slug`."""
-    
+
     lookup_field = 'slug'
     filter_backends = (filters.SearchFilter,)
     search_fields = ['name']
