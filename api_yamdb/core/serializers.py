@@ -11,15 +11,6 @@ class SlugNameSerializer(serializers.ModelSerializer):
     """Базовый сериализатор для моделей с полями name и slug."""
 
     name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
-    slug = serializers.CharField(
-        max_length=SLUG_FIELD_LENGTH,
-        validators=[
-            RegexValidator(
-                regex=r'^[-a-zA-Z0-9_]+$',
-                message=_('Slug содержит недопустимые символы')
-            ),
-        ]
-    )
 
     class Meta:
         fields = ('name', 'slug')

@@ -134,32 +134,12 @@ class AdminUserSerializer(
 class CategorySerializer(SlugNameSerializer):
     """Сериализатор для категорий."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields['slug'].validators.append(
-            UniqueValidator(
-                queryset=Category.objects.all(),
-                message=_('Категория с таким slug уже существует.')
-            )
-        )
-
     class Meta(SlugNameSerializer.Meta):
         model = Category
 
 
 class GenreSerializer(SlugNameSerializer):
     """Сериализатор для жанров."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.fields['slug'].validators.append(
-            UniqueValidator(
-                queryset=Genre.objects.all(),
-                message=_('Жанр с таким slug уже существует.')
-            )
-        )
 
     class Meta(SlugNameSerializer.Meta):
         model = Genre
@@ -218,14 +198,12 @@ class ReviewSerializer(serializers.ModelSerializer):
 class TitleSerializer(serializers.ModelSerializer):
     """Сериализатор для записи произведений."""
 
-    name = serializers.CharField(max_length=NAME_FIELD_LENGTH)
-    rating = serializers.IntegerField(read_only=True)
-    year = serializers.IntegerField(max_value=datetime.now().year)
     genre = serializers.SlugRelatedField(
         slug_field='slug',
         queryset=Genre.objects.all(),
         many=True,
-        required=True
+        required=True,
+        allow_empty=False
     )
     category = serializers.SlugRelatedField(
         slug_field='slug',
@@ -237,11 +215,18 @@ class TitleSerializer(serializers.ModelSerializer):
         model = Title
         fields = '__all__'
 
+    def to_representation(self, instance):
+        """Вернет данные, включая наименование и slug категории и жанра."""
+        return TitleReadSerializer(instance, context=self.context).data
+
 
 class TitleReadSerializer(serializers.ModelSerializer):
-    """Сериализатор для чтения произведений."""
+    """Сериализатор для чтения произведений.
 
-    rating = serializers.IntegerField(read_only=True, allow_null=True)
+    Вернет данные, включая наименование и slug категории и жанра.
+    """
+
+    rating = serializers.IntegerField(read_only=True, default=None)
     genre = GenreSerializer(many=True, read_only=True)
     category = CategorySerializer(read_only=True)
 
