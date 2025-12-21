@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
@@ -8,62 +9,38 @@ from core.constants import (
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
     NAME_FIELD_LENGTH,
-    SLUG_FIELD_LENGTH,
     STR_LENGTH,
 )
+from core.models import SlugFieldListModel
 
 
-class Category(models.Model):
-    name = models.CharField(
-        max_length=NAME_FIELD_LENGTH,
-        verbose_name=_('Наименование')
-    )
-    slug = models.SlugField(
-        max_length=SLUG_FIELD_LENGTH,
-        unique=True,
-        verbose_name=_('Адрес категории')
-    )
+class Category(SlugFieldListModel):
+    """Модель категории произведения."""
 
-    class Meta:
-        ordering = ['name']
+    class Meta(SlugFieldListModel.Meta):
         verbose_name = _('Категория')
         verbose_name_plural = _('Категории')
 
-    def __str__(self):
-        return Truncator(self.name).chars(STR_LENGTH)
 
+class Genre(SlugFieldListModel):
+    """Модель категории произведения."""
 
-class Genre(models.Model):
-    name = models.CharField(
-        max_length=NAME_FIELD_LENGTH,
-        verbose_name=_('Название жанра')
-    )
-    slug = models.SlugField(
-        max_length=SLUG_FIELD_LENGTH,
-        unique=True,
-        verbose_name=_('Адрес жанра')
-    )
-
-    class Meta:
-        ordering = ['name']
+    class Meta(SlugFieldListModel.Meta):
         verbose_name = _('Жанр')
         verbose_name_plural = _('Жанры')
-
-    def __str__(self):
-        return Truncator(self.name).chars(STR_LENGTH)
 
 
 class Title(models.Model):
     name = models.CharField(
+        db_index=True,
         max_length=NAME_FIELD_LENGTH,
         verbose_name=_('Название')
     )
-    year = models.IntegerField(verbose_name=_('Год выпуска'))
-    rating = models.IntegerField(
-        null=True,
-        blank=True,
-        default=None,
-        verbose_name=_('Рейтинг на основе отзывов')
+    year = models.SmallIntegerField(
+        validators=[
+            MaxValueValidator(timezone.now().year)
+        ],
+        verbose_name=_('Год выпуска')
     )
     description = models.TextField(blank=True, verbose_name=_('Описание'))
     genre = models.ManyToManyField('Genre', verbose_name=_('Жанр'))
