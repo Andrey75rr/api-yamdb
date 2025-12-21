@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 
+from core.constants import CSV_PATH
 from reviews.models import Category, Genre, Title, Review, Comment, User
 
 
@@ -53,7 +54,7 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **options):
         """Загрузит данные из csv файла."""
-        data_dir = os.path.join(settings.BASE_DIR, 'static/data')
+        data_dir = os.path.join(settings.BASE_DIR, CSV_PATH)
 
         for csv_file, model in self.MODELS_ORDER:
             file_path = os.path.join(data_dir, csv_file)
@@ -99,7 +100,7 @@ class Command(BaseCommand):
 
     def process_row(self, model, row: Dict[str, str], row_num: int) -> None:
         """Обрабатывает одну строку CSV."""
-        data = self.prepare_data(model, row, row_num)
+        data = self.prepare_data(model, row)
         obj_id = data.pop('id', None)
 
         if obj_id is not None:
