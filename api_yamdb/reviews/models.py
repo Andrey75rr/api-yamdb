@@ -1,5 +1,11 @@
+import re
+
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import (
+    MaxValueValidator,
+    MinValueValidator,
+    RegexValidator
+)
 from django.db import models
 from django.utils import timezone
 from django.utils.text import Truncator
@@ -9,7 +15,9 @@ from core.constants import (
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
     NAME_FIELD_LENGTH,
+    NAME_254_FIELD_LENGTH,
     STR_LENGTH,
+    ROLE_FIELD_LIMIT,
 )
 from core.models import SlugFieldListModel
 
@@ -61,6 +69,28 @@ class Title(models.Model):
         return Truncator(self.name).chars(STR_LENGTH)
 
 
+class BaseFeedback(models.Model):
+    """Абстрактная базовая модель для отзывов и комментариев."""
+
+    text = models.TextField(_('Текст'))
+    author = models.ForeignKey(
+        'User',
+        on_delete=models.CASCADE,
+        verbose_name=_('Автор')
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Дата публикации')
+    )
+
+    class Meta:
+        abstract = True
+        ordering = ['-pub_date']
+
+    def __str__(self):
+        return f'{self._meta.verbose_name} от {self.author}'
+
+
 class User(AbstractUser):
     """Кастомная модель пользователя для YaMDb."""
 
@@ -72,8 +102,8 @@ class User(AbstractUser):
     email = models.EmailField(
         _('email address'),
         unique=True,
-        blank=False,
-        null=False
+        null=False,
+        max_length=NAME_254_FIELD_LENGTH
     )
 
     bio = models.TextField(
@@ -83,7 +113,7 @@ class User(AbstractUser):
 
     role = models.CharField(
         _('роль'),
-        max_length=20,
+        max_length=ROLE_FIELD_LIMIT,
         choices=Role.choices,
         default=Role.USER
     )
@@ -93,6 +123,24 @@ class User(AbstractUser):
         max_length=6,
         blank=True,
         null=True
+    )
+
+    username = models.CharField(
+        _('username'),
+        max_length=150,
+        unique=True,
+        help_text=_('150 симв., буквы, цифры, @ . / + - _'),
+        validators=[
+            AbstractUser.username_validator,
+            RegexValidator(
+                regex=r'^(?!me$).*$',
+                message='Использовать имя "me" в качестве username запрещено.',
+                flags=re.IGNORECASE
+            )
+        ],
+        error_messages={
+            'unique': _("«Пользователь с таким именем уже существует."),
+        },
     )
 
     class Meta:
@@ -111,76 +159,44 @@ class User(AbstractUser):
     def is_moderator(self):
         return self.role == self.Role.MODERATOR
 
-
-class Review(models.Model):
+class Review(BaseFeedback):
     """Модель отзыва на произведение."""
 
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
+        verbose_name=_('Произведение')
     )
-    text = models.TextField()
-    author = models.ForeignKey(
-        'User',
-        on_delete=models.CASCADE,
-    )
-    score = models.IntegerField(
+    score = models.PositiveSmallIntegerField(
+        _('Оценка'),
         validators=[
             MinValueValidator(MIN_SCORE_RATING),
             MaxValueValidator(MAX_SCORE_RATING)
         ]
     )
-    pub_date = models.DateTimeField(auto_now_add=True)
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.update_title_rating()
-
-    def delete(self, *args, **kwargs):
-        super().delete(*args, **kwargs)
-        self.update_title_rating()
-
-    def update_title_rating(self):
-        avg_rating = self.title.reviews.aggregate(
-            models.Avg('score'))['score__avg']
-        self.title.rating = round(avg_rating) if avg_rating else None
-        self.title.save()
 
     class Meta:
         default_related_name = 'reviews'
+        verbose_name = _('Отзыв')
+        verbose_name_plural = _('Отзывы')
         constraints = [
             models.UniqueConstraint(
                 fields=['title', 'author'],
                 name='unique_review'
             )
         ]
-        ordering = ['-pub_date']
-        verbose_name = _('Отзыв')
-        verbose_name_plural = _('Отзывы')
-
-    def __str__(self):
-        return f'Отзыв от {self.author} на {self.title}'
 
 
-class Comment(models.Model):
+class Comment(BaseFeedback):
     """Модель комментария к отзыву."""
 
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
+        verbose_name=_('Отзыв')
     )
-    text = models.TextField()
-    author = models.ForeignKey(
-        'User',
-        on_delete=models.CASCADE,
-    )
-    pub_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         default_related_name = 'comments'
-        ordering = ['-pub_date']
         verbose_name = _('Комментарий')
         verbose_name_plural = _('Комментарии')
-
-    def __str__(self):
-        return f'Комментарий от {self.author}'
