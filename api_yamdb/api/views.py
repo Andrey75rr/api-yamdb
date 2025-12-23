@@ -26,7 +26,6 @@ from api.serializers import (
     TitleReadSerializer,
     TitleSerializer,
     TokenSerializer,
-    UserSerializer,
 )
 from core.views import SafeUpdateViewSet, SlugModelViewSet
 from reviews.models import Category, Genre, Review, Title, User
@@ -66,23 +65,45 @@ class UserViewSet(viewsets.ModelViewSet):
 
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    serializer_class = AdminUserSerializer
     permission_classes = (IsAdmin,)
     lookup_field = 'username'
-
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['username', 'email']
+
+    def create(self, request, *args, **kwargs):
+        """Создание пользователя."""
+
+        data = request.data.copy()
+        if 'role' not in data:
+            data['role'] = User.Role.USER
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    def update(self, request, *args, **kwargs):
+        """Обновление пользователя."""
+
+        return super().update(request, *args, **kwargs)
 
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
+        """Эндпоинт для работы с собственным профилем."""
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
-        else:  # PATCH
+        else:
+            data = request.data.copy()
+            data.pop('role', None)
             serializer = self.get_serializer(
                 request.user,
-                data=request.data,
+                data=data,
                 partial=True
             )
             serializer.is_valid(raise_exception=True)

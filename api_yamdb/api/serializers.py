@@ -5,15 +5,18 @@ from datetime import datetime
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
+
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 from rest_framework.validators import UniqueValidator
 
 from core.constants import (
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
     NAME_FIELD_LENGTH,
+    NAME_254_FIELD_LENGTH,
+    MIDDLE_NAME_FIELD_LENGTH,
 )
 from core.serializers import SlugNameSerializer, UsernameValidationMixin
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -27,44 +30,36 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
 
     email = serializers.EmailField(
         required=True,
-        max_length=254,
+        max_length=NAME_254_FIELD_LENGTH,
     )
     username = serializers.CharField(
         required=True,
-        max_length=150,
+        max_length=MIDDLE_NAME_FIELD_LENGTH,
     )
 
     def validate(self, data):
         email = data.get('email')
         username = data.get('username')
 
-        if not email or not username:
-            return data
-
+        user_exists = User.objects.filter(
+            email=email,
+            username=username
+        ).exists()
         email_exists = User.objects.filter(email=email).exists()
         username_exists = User.objects.filter(username=username).exists()
 
-        if email_exists and username_exists:
-            user = User.objects.filter(
-                email=email,
-                username=username
-            ).first()
-            if not user:
-                raise serializers.ValidationError(
-                    'Email и username принадлежат разным пользователям.'
-                )
-        elif email_exists:
-            user_with_email = User.objects.filter(email=email).first()
-            if user_with_email.username != username:
-                raise serializers.ValidationError(
-                    'Пользователь с таким email уже существует.'
-                )
-        elif username_exists:
-            user_with_username = User.objects.filter(username=username).first()
-            if user_with_username.email != email:
-                raise serializers.ValidationError(
-                    'Пользователь с таким username уже существует.'
-                )
+        if email_exists and username_exists and not user_exists:
+            raise serializers.ValidationError(
+                'Email и username принадлежат разным пользователям.'
+            )
+        elif email_exists and not user_exists:
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже существует.'
+            )
+        elif username_exists and not user_exists:
+            raise serializers.ValidationError(
+                'Пользователь с таким username уже существует.'
+            )
         return data
 
     def create(self, validated_data):
@@ -98,10 +93,7 @@ class TokenSerializer(UsernameValidationMixin, serializers.Serializer):
     def validate(self, data):
         username = data['username']
         confirmation_code = data['confirmation_code']
-        try:
-            user = User.objects.get(username=username)
-        except User.DoesNotExist:
-            raise NotFound('Пользователь не найден.')
+        user = get_object_or_404(User, username=username)
         if user.confirmation_code != confirmation_code:
             raise serializers.ValidationError(
                 {'confirmation_code': 'Неверный код подтверждения.'}
@@ -109,22 +101,25 @@ class TokenSerializer(UsernameValidationMixin, serializers.Serializer):
         return data
 
 
-class UserSerializer(UsernameValidationMixin, serializers.ModelSerializer):
-    """Сериализатор для работы с пользователями."""
+class AdminUserSerializer(
+    UsernameValidationMixin,
+    serializers.ModelSerializer
+):
+    """Сериализатор для администраторов (полные права)."""
+
+    email = serializers.EmailField(
+        required=True,
+        max_length=254,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
 
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-
-    def save(self, **kwargs):
-        request = self.context.get('request')
-        if request and not request.user.is_admin:
-            if self.instance:
-                self.validated_data['role'] = self.instance.role
-            else:
-                self.validated_data['role'] = User.Role.USER
-        return super().save(**kwargs)
+        extra_kwargs = {
+            'role': {'required': False}
+        }
 
 
 class CategorySerializer(SlugNameSerializer):
@@ -175,7 +170,6 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ('id', 'text', 'author', 'score', 'pub_date')
-        read_only_fields = ('author',)
 
     def validate(self, data):
         request = self.context.get('request')
