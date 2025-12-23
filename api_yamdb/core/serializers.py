@@ -19,10 +19,12 @@ class SlugNameSerializer(serializers.ModelSerializer):
 class UsernameValidationMixin:
     """Миксин для валидации username."""
 
+    FORBIDDEN_USERNAME = 'me'
+
     def validate_username(self, value):
-        if value.lower() == 'me':
+        if value == self.FORBIDDEN_USERNAME:
             raise serializers.ValidationError(
-                'Имя пользователя "me" не разрешено.'
+                f"Имя пользователя '{self.FORBIDDEN_USERNAME}' не разрешено."
             )
         pattern = r'^[\w.@+-]+\Z'
         if not re.match(pattern, value):

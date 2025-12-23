@@ -116,19 +116,15 @@ class UserSerializer(UsernameValidationMixin, serializers.ModelSerializer):
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        read_only_fields = ('role',)
 
-
-class AdminUserSerializer(
-    UsernameValidationMixin,
-    serializers.ModelSerializer
-):
-    """Сериализатор для администраторов (полные права)."""
-
-    class Meta:
-        model = User
-        fields = ('username', 'email', 'first_name',
-                  'last_name', 'bio', 'role')
+    def save(self, **kwargs):
+        request = self.context.get('request')
+        if request and not request.user.is_admin:
+            if self.instance:
+                self.validated_data['role'] = self.instance.role
+            else:
+                self.validated_data['role'] = User.Role.USER
+        return super().save(**kwargs)
 
 
 class CategorySerializer(SlugNameSerializer):

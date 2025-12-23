@@ -18,7 +18,6 @@ from api.permissions import (
     IsAuthorModeratorAdminOrReadOnly,
 )
 from api.serializers import (
-    AdminUserSerializer,
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
@@ -74,26 +73,17 @@ class UserViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = ['username', 'email']
 
-    def get_serializer_class(self):
-        """Выбираем сериализатор в зависимости от прав пользователя."""
-        if self.request.user.is_authenticated and self.request.user.is_admin:
-            return AdminUserSerializer
-        return UserSerializer
-
     @action(detail=False, methods=['get', 'patch'],
             permission_classes=[IsAuthenticated])
     def me(self, request):
-        """Получить или изменить свой профиль."""
-
         if request.method == 'GET':
             serializer = self.get_serializer(request.user)
             return Response(serializer.data)
-        if request.method == 'PATCH':
-            serializer = UserSerializer(
+        else:  # PATCH
+            serializer = self.get_serializer(
                 request.user,
                 data=request.data,
-                partial=True,
-                context={'request': request}
+                partial=True
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
@@ -129,6 +119,16 @@ class CommentViewSet(SafeUpdateViewSet):
         IsAuthenticatedOrReadOnly,
         IsAuthorModeratorAdminOrReadOnly
     ]
+
+    def get_review(self):
+        title_id = self.kwargs.get('title_id')
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(
+            Review,
+            id=review_id,
+            title_id=title_id
+        )
+        return review
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
