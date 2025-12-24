@@ -1,12 +1,9 @@
 import random
 import string
-from datetime import datetime
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
-from django.utils.translation import gettext_lazy as _
 
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -14,7 +11,6 @@ from rest_framework.validators import UniqueValidator
 from core.constants import (
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
-    NAME_FIELD_LENGTH,
     NAME_254_FIELD_LENGTH,
     MIDDLE_NAME_FIELD_LENGTH,
 )

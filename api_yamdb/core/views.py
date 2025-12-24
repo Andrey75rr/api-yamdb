@@ -1,5 +1,4 @@
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.response import Response
+from rest_framework import filters, mixins, viewsets
 
 from api.permissions import IsAdminOrReadOnly
 
@@ -7,19 +6,7 @@ from api.permissions import IsAdminOrReadOnly
 class SafeUpdateViewSet(viewsets.ModelViewSet):
     """Базовый класс для вьюсетов, в которых метод PUT запрещен."""
 
-    def update(self, request, *args, **kwargs):
-        """Запретит метод PUT (вернет ошибку 405)."""
-        if request.method == 'PUT':
-            return Response(
-                {
-                    "detail": (
-                        "Полное обновление (PUT) запрещено. "
-                        "Используйте PATCH для частичных изменений."
-                    )
-                },
-                status=status.HTTP_405_METHOD_NOT_ALLOWED
-            )
-        return super().update(request, *args, **kwargs)
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
 
 class SlugModelViewSet(

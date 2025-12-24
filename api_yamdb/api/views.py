@@ -18,6 +18,7 @@ from api.permissions import (
     IsAuthorModeratorAdminOrReadOnly,
 )
 from api.serializers import (
+    AdminUserSerializer,
     CategorySerializer,
     CommentSerializer,
     GenreSerializer,
@@ -184,9 +185,10 @@ class TitleViewSet(SafeUpdateViewSet):
     serializer_class = TitleSerializer
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
+    ordering_fields = ['category', 'genre', 'year', 'name']
 
     def get_serializer_class(self):
         """Вернет соответствующий сериализатор (для записи или чтения)."""
-        if self.action in ['create', 'update', 'partial_update']:
+        if self.request.method in self.request.safe_methods:
             return TitleSerializer
         return TitleReadSerializer

@@ -1,5 +1,6 @@
 import re
 
+from django.contrib import admin
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import (
     MaxValueValidator,
@@ -39,6 +40,8 @@ class Genre(SlugFieldListModel):
 
 
 class Title(models.Model):
+    """Модель произведения."""
+
     name = models.CharField(
         db_index=True,
         max_length=NAME_FIELD_LENGTH,
@@ -194,6 +197,7 @@ class User(AbstractUser):
     @property
     def is_moderator(self):
         return self.role == self.Role.MODERATOR
+
 
 class Review(BaseFeedback):
     """Модель отзыва на произведение."""

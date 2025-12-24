@@ -65,8 +65,3 @@ class ReviewAdmin(admin.ModelAdmin):
     list_display_links = ['id']
     list_filter = ('title', 'score', 'author', 'pub_date')
     search_fields = ('text', 'title')
-
-
-
-
-

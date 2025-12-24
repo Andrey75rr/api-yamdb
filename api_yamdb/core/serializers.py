@@ -1,10 +1,8 @@
 import re
 
-from django.core.validators import RegexValidator
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from core.constants import NAME_FIELD_LENGTH, SLUG_FIELD_LENGTH
+from core.constants import NAME_FIELD_LENGTH
 
 
 class SlugNameSerializer(serializers.ModelSerializer):
