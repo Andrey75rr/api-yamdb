@@ -19,7 +19,7 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class IsAuthorModeratorAdminOrReadOnly(permissions.BasePermission):
-    """Изменение только для автора, модератора или администратора"""
+    """Изменение только для автора, модератора или администратора."""
 
     def has_object_permission(self, request, view, obj):
         return (

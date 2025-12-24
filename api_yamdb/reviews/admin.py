@@ -1,7 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 
-
 from reviews.models import (
     Category,
     Comment,
@@ -10,7 +9,6 @@ from reviews.models import (
     Title,
     TitleGenre,
 )
-
 
 admin.site.unregister(Group)
 

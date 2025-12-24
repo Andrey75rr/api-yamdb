@@ -3,12 +3,12 @@ import os
 from typing import Any, Dict
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist
 
 from core.constants import CSV_PATH
-from reviews.models import Category, Genre, Title, Review, Comment, User
+from reviews.models import Category, Comment, Genre, Review, Title, User
 
 
 class Command(BaseCommand):

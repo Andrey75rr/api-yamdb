@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import (
     MaxValueValidator,
     MinValueValidator,
-    RegexValidator
+    RegexValidator,
 )
 from django.db import models
 from django.utils import timezone
@@ -13,14 +13,17 @@ from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
 from core.constants import (
+    CONFIRMATION_CODE_LENGTH,
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
+    EMAIL_LENGTH,
     NAME_FIELD_LENGTH,
-    NAME_254_FIELD_LENGTH,
-    STR_LENGTH,
     ROLE_FIELD_LIMIT,
+    STR_LENGTH,
+    USER_NAME_FIELD_LENGTH,
+    USERNAME_REGEX,
 )
-from core.models import SlugFieldListModel
+from core.models import BaseFeedback, SlugFieldListModel
 
 
 class Category(SlugFieldListModel):
@@ -85,8 +88,9 @@ class TitleGenre(models.Model):
     """Модель от ноешния произведений к жанрам.
 
     Модель создана в явном виде и помогает адекватно отображать наименование
-    объектов в админ-панели в карточке проивзедения
+    объектов в админ-панели в карточке проивзедения.
     """
+
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
@@ -108,28 +112,6 @@ class TitleGenre(models.Model):
         verbose_name_plural = 'Жанры произведений'
 
 
-class BaseFeedback(models.Model):
-    """Абстрактная базовая модель для отзывов и комментариев."""
-
-    text = models.TextField(_('Текст'))
-    author = models.ForeignKey(
-        'User',
-        on_delete=models.CASCADE,
-        verbose_name=_('Автор')
-    )
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_('Дата публикации')
-    )
-
-    class Meta:
-        abstract = True
-        ordering = ['-pub_date']
-
-    def __str__(self):
-        return f'{self._meta.verbose_name} от {self.author}'
-
-
 class User(AbstractUser):
     """Кастомная модель пользователя для YaMDb."""
 
@@ -142,7 +124,7 @@ class User(AbstractUser):
         _('email address'),
         unique=True,
         null=False,
-        max_length=NAME_254_FIELD_LENGTH
+        max_length=EMAIL_LENGTH
     )
 
     bio = models.TextField(
@@ -159,20 +141,20 @@ class User(AbstractUser):
 
     confirmation_code = models.CharField(
         _('код подтверждения'),
-        max_length=6,
+        max_length=CONFIRMATION_CODE_LENGTH,
         blank=True,
         null=True
     )
 
     username = models.CharField(
         _('username'),
-        max_length=150,
+        max_length=USER_NAME_FIELD_LENGTH,
         unique=True,
         help_text=_('150 симв., буквы, цифры, @ . / + - _'),
         validators=[
             AbstractUser.username_validator,
             RegexValidator(
-                regex=r'^(?!me$).*$',
+                regex=USERNAME_REGEX,
                 message='Использовать имя "me" в качестве username запрещено.',
                 flags=re.IGNORECASE
             )
@@ -215,7 +197,7 @@ class Review(BaseFeedback):
         ]
     )
 
-    class Meta:
+    class Meta(BaseFeedback.Meta):
         default_related_name = 'reviews'
         verbose_name = _('Отзыв')
         verbose_name_plural = _('Отзывы')
@@ -236,7 +218,7 @@ class Comment(BaseFeedback):
         verbose_name=_('Отзыв')
     )
 
-    class Meta:
+    class Meta(BaseFeedback.Meta):
         default_related_name = 'comments'
         verbose_name = _('Комментарий')
         verbose_name_plural = _('Комментарии')

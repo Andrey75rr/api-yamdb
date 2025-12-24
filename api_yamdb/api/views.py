@@ -1,3 +1,4 @@
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
@@ -6,6 +7,7 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
+    SAFE_METHODS
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -121,16 +123,15 @@ class ReviewViewSet(SafeUpdateViewSet):
         IsAuthorModeratorAdminOrReadOnly
     ]
 
+    def get_title(self):
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
+
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        return Review.objects.filter(title_id=title_id)
+        title = self.get_title()
+        return title.reviews.all()
 
     def perform_create(self, serializer):
-        title_id = self.kwargs.get('title_id')
-        serializer.save(
-            author=self.request.user,
-            title=get_object_or_404(Title, pk=title_id)
-        )
+        serializer.save(author=self.request.user, title=self.get_title())
 
 
 class CommentViewSet(SafeUpdateViewSet):
@@ -145,22 +146,14 @@ class CommentViewSet(SafeUpdateViewSet):
     def get_review(self):
         title_id = self.kwargs.get('title_id')
         review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(
-            Review,
-            id=review_id,
-            title_id=title_id
-        )
-        return review
+        return get_object_or_404(Review, id=review_id, title_id=title_id)
 
     def get_queryset(self):
-        review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(Review, id=review_id)
+        review = self.get_review()
         return review.comments.all()
 
     def perform_create(self, serializer):
-        review_id = self.kwargs.get('review_id')
-        review = get_object_or_404(Review, id=review_id)
-        serializer.save(author=self.request.user, review=review)
+        serializer.save(author=self.request.user, review=self.get_review())
 
 
 class CategoryViewSet(SlugModelViewSet):
@@ -180,15 +173,15 @@ class GenreViewSet(SlugModelViewSet):
 class TitleViewSet(SafeUpdateViewSet):
     """Вьюсет для произведений."""
 
-    queryset = Title.objects.select_related(
-        'category').prefetch_related('genre')
-    serializer_class = TitleSerializer
+    queryset = Title.objects.annotate(
+        rating=Avg('reviews__score')
+    ).select_related('category').prefetch_related('genre')
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
     ordering_fields = ['category', 'genre', 'year', 'name']
 
     def get_serializer_class(self):
         """Вернет соответствующий сериализатор (для записи или чтения)."""
-        if self.request.method in self.request.safe_methods:
-            return TitleSerializer
-        return TitleReadSerializer
+        if self.request.method in SAFE_METHODS:
+            return TitleReadSerializer
+        return TitleSerializer

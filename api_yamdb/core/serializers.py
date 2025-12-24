@@ -2,7 +2,7 @@ import re
 
 from rest_framework import serializers
 
-from core.constants import NAME_FIELD_LENGTH
+from core.constants import NAME_FIELD_LENGTH, USERNAME_VALIDATION_PATTERN
 
 
 class SlugNameSerializer(serializers.ModelSerializer):
@@ -24,7 +24,7 @@ class UsernameValidationMixin:
             raise serializers.ValidationError(
                 f"Имя пользователя '{self.FORBIDDEN_USERNAME}' не разрешено."
             )
-        pattern = r'^[\w.@+-]+\Z'
+        pattern = USERNAME_VALIDATION_PATTERN
         if not re.match(pattern, value):
             raise serializers.ValidationError(
                 'Имя пользователя содержит недопустимые символы. '

@@ -4,15 +4,15 @@ import string
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
-
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from core.constants import (
     MAX_SCORE_RATING,
+    USER_NAME_FIELD_LENGTH,
     MIN_SCORE_RATING,
-    NAME_254_FIELD_LENGTH,
-    MIDDLE_NAME_FIELD_LENGTH,
+    EMAIL_LENGTH,
 )
 from core.serializers import SlugNameSerializer, UsernameValidationMixin
 from reviews.models import Category, Comment, Genre, Review, Title
@@ -26,11 +26,11 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
 
     email = serializers.EmailField(
         required=True,
-        max_length=NAME_254_FIELD_LENGTH,
+        max_length=EMAIL_LENGTH,
     )
     username = serializers.CharField(
         required=True,
-        max_length=MIDDLE_NAME_FIELD_LENGTH,
+        max_length=USER_NAME_FIELD_LENGTH,
     )
 
     def validate(self, data):
@@ -203,6 +203,8 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Вернет данные, включая наименование и slug категории и жанра."""
+    #    instance = Title.objects.select_related(
+    #        'category').prefetch_related('genre').get(id=instance.id)
         return TitleReadSerializer(instance, context=self.context).data
 
 
