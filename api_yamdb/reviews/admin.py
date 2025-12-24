@@ -52,7 +52,7 @@ class CommentAdmin(admin.ModelAdmin):
     list_display = ('id', 'text', 'review', 'author', 'pub_date')
     list_display_links = ['id']
     list_filter = ('review', 'author', 'pub_date')
-    search_fields = ('text', 'review')
+    search_fields = ('text', 'review__text', 'author__username')
 
 
 @admin.register(Review)
@@ -62,4 +62,4 @@ class ReviewAdmin(admin.ModelAdmin):
     list_display = ('id', 'title', 'text', 'author', 'score', 'pub_date')
     list_display_links = ['id']
     list_filter = ('title', 'score', 'author', 'pub_date')
-    search_fields = ('text', 'title')
+    search_fields = ('text', 'title__name', 'author__username')

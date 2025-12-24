@@ -203,8 +203,6 @@ class TitleSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         """Вернет данные, включая наименование и slug категории и жанра."""
-    #    instance = Title.objects.select_related(
-    #        'category').prefetch_related('genre').get(id=instance.id)
         return TitleReadSerializer(instance, context=self.context).data
 
 

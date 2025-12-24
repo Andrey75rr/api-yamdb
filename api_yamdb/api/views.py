@@ -175,11 +175,11 @@ class TitleViewSet(SafeUpdateViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
-    ).select_related('category').prefetch_related('genre')
+    ).select_related('category').prefetch_related('genre').order_by('id')
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
-    ordering_fields = ['category', 'genre', 'year', 'name']
-
+    ordering_fields = ['category', 'genre', 'year', 'name', 'rating']
+    
     def get_serializer_class(self):
         """Вернет соответствующий сериализатор (для записи или чтения)."""
         if self.request.method in SAFE_METHODS:

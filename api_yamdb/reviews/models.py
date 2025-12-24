@@ -8,7 +8,6 @@ from django.core.validators import (
     RegexValidator,
 )
 from django.db import models
-from django.utils import timezone
 from django.utils.text import Truncator
 from django.utils.translation import gettext_lazy as _
 
@@ -24,6 +23,7 @@ from core.constants import (
     USERNAME_REGEX,
 )
 from core.models import BaseFeedback, SlugFieldListModel
+from core.utils import validate_year
 
 
 class Category(SlugFieldListModel):
@@ -52,7 +52,7 @@ class Title(models.Model):
     )
     year = models.SmallIntegerField(
         validators=[
-            MaxValueValidator(timezone.now().year)
+            validate_year
         ],
         verbose_name=_('Год выпуска')
     )
