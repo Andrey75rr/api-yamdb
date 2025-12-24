@@ -51,7 +51,11 @@ class Title(models.Model):
         verbose_name=_('Год выпуска')
     )
     description = models.TextField(blank=True, verbose_name=_('Описание'))
-    genre = models.ManyToManyField('Genre', verbose_name=_('Жанр'))
+    genre = models.ManyToManyField(
+        'Genre',
+        verbose_name=_('Жанр'),
+        through='TitleGenre'
+    )
     category = models.ForeignKey(
         'Category',
         on_delete=models.SET_NULL,
@@ -67,6 +71,38 @@ class Title(models.Model):
 
     def __str__(self):
         return Truncator(self.name).chars(STR_LENGTH)
+
+    @admin.display(description='Жанр')
+    def get_title_genres(self):
+        """Вернет строку с перечнем жанров произведения."""
+        return ', '.join(self.genre.all().values_list('name', flat=True))
+
+
+class TitleGenre(models.Model):
+    """Модель от ноешния произведений к жанрам.
+
+    Модель создана в явном виде и помогает адекватно отображать наименование
+    объектов в админ-панели в карточке проивзедения
+    """
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        verbose_name='Произведение'
+    )
+    genre = models.ForeignKey(
+        Genre,
+        on_delete=models.CASCADE,
+        verbose_name='Жанр'
+    )
+
+    def __str__(self):
+        return 'Жанр произведения'
+
+    class Meta:
+        db_table = 'reviews_title_genre'
+        default_related_name = 'title_genres'
+        verbose_name = 'Жанр произведения'
+        verbose_name_plural = 'Жанры произведений'
 
 
 class BaseFeedback(models.Model):
