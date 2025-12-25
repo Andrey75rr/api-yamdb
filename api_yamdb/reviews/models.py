@@ -13,14 +13,14 @@ from django.utils.translation import gettext_lazy as _
 
 from core.constants import (
     CONFIRMATION_CODE_LENGTH,
+    EMAIL_LENGTH,
+    FORBIDDEN_USERNAME,
     MAX_SCORE_RATING,
     MIN_SCORE_RATING,
-    EMAIL_LENGTH,
     NAME_FIELD_LENGTH,
     ROLE_FIELD_LIMIT,
     STR_LENGTH,
     USER_NAME_FIELD_LENGTH,
-    FORBIDDEN_USERNAME,
 )
 from core.models import BaseFeedback, SlugFieldListModel
 from core.utils import validate_year

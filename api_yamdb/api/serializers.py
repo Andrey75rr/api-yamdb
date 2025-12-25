@@ -8,14 +8,13 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
 from core.constants import (
-    MAX_SCORE_RATING,
-    USER_NAME_FIELD_LENGTH,
-    MIN_SCORE_RATING,
     EMAIL_LENGTH,
+    MAX_SCORE_RATING,
+    MIN_SCORE_RATING,
+    USER_NAME_FIELD_LENGTH,
 )
 from core.serializers import SlugNameSerializer, UsernameValidationMixin
 from reviews.models import Category, Comment, Genre, Review, Title
-
 
 User = get_user_model()
 
@@ -38,7 +37,7 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
 
         if User.objects.filter(email=email, username=username).exists():
             return data
-        if (User.objects.filter(email=email).exists() 
+        if (User.objects.filter(email=email).exists()
                 and User.objects.filter(username=username).exists()):
             raise serializers.ValidationError(
                 'Email и username принадлежат разным пользователям.'

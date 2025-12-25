@@ -4,10 +4,10 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (
+    SAFE_METHODS,
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
-    SAFE_METHODS
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -157,7 +157,7 @@ class TitleViewSet(SafeUpdateViewSet):
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
     ordering_fields = ['category', 'genre', 'year', 'name', 'rating']
-    
+
     def get_serializer_class(self):
         """Вернет соответствующий сериализатор (для записи или чтения)."""
         if self.request.method in SAFE_METHODS:

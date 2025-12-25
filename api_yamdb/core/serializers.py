@@ -3,9 +3,9 @@ import re
 from rest_framework import serializers
 
 from core.constants import (
+    FORBIDDEN_USERNAME,
     NAME_FIELD_LENGTH,
     USERNAME_VALIDATION_PATTERN,
-    FORBIDDEN_USERNAME,
 )
 
 
@@ -24,7 +24,7 @@ class UsernameValidationMixin:
     def validate_username(self, value):
         if value.lower() == FORBIDDEN_USERNAME:
             raise serializers.ValidationError(
-                f"Имя пользователя '{self.FORBIDDEN_USERNAME}' не разрешено."
+                f"Имя пользователя '{FORBIDDEN_USERNAME}' не разрешено."
             )
         pattern = USERNAME_VALIDATION_PATTERN
         if not re.match(pattern, value):
