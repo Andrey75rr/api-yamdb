@@ -37,11 +37,6 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
 
         if User.objects.filter(email=email, username=username).exists():
             return data
-        if (User.objects.filter(email=email).exists()
-                and User.objects.filter(username=username).exists()):
-            raise serializers.ValidationError(
-                'Email и username принадлежат разным пользователям.'
-            )
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким email уже существует.'

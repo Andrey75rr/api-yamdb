@@ -153,7 +153,7 @@ class TitleViewSet(SafeUpdateViewSet):
 
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')
-    ).select_related('category').prefetch_related('genre').order_by('id')
+    ).select_related('category').prefetch_related('genre').order_by('rating')
     permission_classes = (IsAdminOrReadOnly,)
     filter_backends = (TitleFilterBackend,)
     ordering_fields = ['category', 'genre', 'year', 'name', 'rating']

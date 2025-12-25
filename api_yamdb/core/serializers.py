@@ -22,7 +22,7 @@ class UsernameValidationMixin:
     """Миксин для валидации username."""
 
     def validate_username(self, value):
-        if value.lower() == FORBIDDEN_USERNAME:
+        if value == FORBIDDEN_USERNAME:
             raise serializers.ValidationError(
                 f"Имя пользователя '{FORBIDDEN_USERNAME}' не разрешено."
             )
