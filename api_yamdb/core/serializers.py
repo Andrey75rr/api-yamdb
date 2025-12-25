@@ -2,7 +2,11 @@ import re
 
 from rest_framework import serializers
 
-from core.constants import NAME_FIELD_LENGTH, USERNAME_VALIDATION_PATTERN
+from core.constants import (
+    NAME_FIELD_LENGTH,
+    USERNAME_VALIDATION_PATTERN,
+    FORBIDDEN_USERNAME,
+)
 
 
 class SlugNameSerializer(serializers.ModelSerializer):
@@ -17,10 +21,8 @@ class SlugNameSerializer(serializers.ModelSerializer):
 class UsernameValidationMixin:
     """Миксин для валидации username."""
 
-    FORBIDDEN_USERNAME = 'me'
-
     def validate_username(self, value):
-        if value == self.FORBIDDEN_USERNAME:
+        if value.lower() == FORBIDDEN_USERNAME:
             raise serializers.ValidationError(
                 f"Имя пользователя '{self.FORBIDDEN_USERNAME}' не разрешено."
             )

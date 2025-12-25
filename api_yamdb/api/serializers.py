@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 
 from core.constants import (
     MAX_SCORE_RATING,
@@ -34,25 +33,21 @@ class SignUpSerializer(UsernameValidationMixin, serializers.Serializer):
     )
 
     def validate(self, data):
-        email = data.get('email')
-        username = data.get('username')
+        email = data['email']
+        username = data['username']
 
-        user_exists = User.objects.filter(
-            email=email,
-            username=username
-        ).exists()
-        email_exists = User.objects.filter(email=email).exists()
-        username_exists = User.objects.filter(username=username).exists()
-
-        if email_exists and username_exists and not user_exists:
+        if User.objects.filter(email=email, username=username).exists():
+            return data
+        if (User.objects.filter(email=email).exists() 
+                and User.objects.filter(username=username).exists()):
             raise serializers.ValidationError(
                 'Email и username принадлежат разным пользователям.'
             )
-        elif email_exists and not user_exists:
+        if User.objects.filter(email=email).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким email уже существует.'
             )
-        elif username_exists and not user_exists:
+        if User.objects.filter(username=username).exists():
             raise serializers.ValidationError(
                 'Пользователь с таким username уже существует.'
             )
@@ -103,19 +98,10 @@ class AdminUserSerializer(
 ):
     """Сериализатор для администраторов (полные права)."""
 
-    email = serializers.EmailField(
-        required=True,
-        max_length=254,
-        validators=[UniqueValidator(queryset=User.objects.all())]
-    )
-
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name',
                   'last_name', 'bio', 'role')
-        extra_kwargs = {
-            'role': {'required': False}
-        }
 
 
 class CategorySerializer(SlugNameSerializer):

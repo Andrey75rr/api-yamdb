@@ -20,7 +20,7 @@ from core.constants import (
     ROLE_FIELD_LIMIT,
     STR_LENGTH,
     USER_NAME_FIELD_LENGTH,
-    USERNAME_REGEX,
+    FORBIDDEN_USERNAME,
 )
 from core.models import BaseFeedback, SlugFieldListModel
 from core.utils import validate_year
@@ -150,17 +150,23 @@ class User(AbstractUser):
         _('username'),
         max_length=USER_NAME_FIELD_LENGTH,
         unique=True,
-        help_text=_('150 симв., буквы, цифры, @ . / + - _'),
+        help_text=_(
+            f'Обязательное поле. Не более {USER_NAME_FIELD_LENGTH} символов. '
+            'Буквы, цифры и @/./+/-/_ только.'
+        ),
         validators=[
             AbstractUser.username_validator,
             RegexValidator(
-                regex=USERNAME_REGEX,
-                message='Использовать имя "me" в качестве username запрещено.',
+                regex=rf'^(?!{FORBIDDEN_USERNAME}$).*$',
+                message=(
+                    f'Использовать имя "{FORBIDDEN_USERNAME}" '
+                    f'в качестве username запрещено.'
+                ),
                 flags=re.IGNORECASE
             )
         ],
         error_messages={
-            'unique': _("«Пользователь с таким именем уже существует."),
+            'unique': _("Пользователь с таким именем уже существует."),
         },
     )
 
